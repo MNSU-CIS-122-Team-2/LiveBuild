@@ -1,0 +1,3 @@
+#!/bin/bash
+cd /home/pi/NetBeansProjects/Calander1/dist
+java -cp Calander1.jar calander1.classproject
