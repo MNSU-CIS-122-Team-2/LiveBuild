@@ -1890,13 +1890,13 @@ public class classproject extends JFrame {
 			    	blue.setBackground(Color.BLUE);
 			    	blue.setBounds(100, 300, 80, 80);
 			    	
-			    	blue2.setBounds(400, 300, 650, 80);
+			    	blue2.setBounds(300, 300, 650, 80);
 			    	blue2.setFont(schedule);
 			    	
 			    	red.setBackground(Color.RED);
 			    	red.setBounds(100, 200, 80, 80);
 			    	
-			    	red2.setBounds(400, 200, 650, 80);
+			    	red2.setBounds(300, 200, 650, 80);
 			    	red2.setFont(schedule);
 
 			    	
