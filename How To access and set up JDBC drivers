@@ -1,0 +1,15 @@
+How to acess SQL managment studio:
+Download&install-https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms?view=sql-server-ver15
+
+At login screen-
+*server type: Database Engine
+*Server Name: database-1.cczlwkbidopl.us-east-2.rds.amazonaws.com,1433
+*Authentication: Sql server authentication
+*Username: CISGroup2
+*Password: Calander122
+
+How to get sql java testing code to work:
+Download and unzip: https://docs.microsoft.com/en-us/sql/connect/jdbc/download-microsoft-jdbc-driver-for-sql-server?view=sql-server-ver15
+Right click on main project folder that you are putting code into=>Click Properties=>Click Java Build path=>Click Add External Jar=>Open unzipped file and keep going into file untill you
+
+find the three jar file=>Control click all three to select them all=>Click open.
