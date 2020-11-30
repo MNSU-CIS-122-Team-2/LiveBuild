@@ -1,0 +1,104 @@
+//So first your going to need to launch your rasberry pi and connect it to a TV with an hdmi cord and have a mouse and keyboard you can plug in handy.
+//After launching the rasberry PI create a user account and remember the user name and password for later
+//Connect to your local wifi network in the top right
+//Launch the console and type the following commands:
+  sudo apt update
+  sudo apt full-upgrade
+  //This will take a while
+  
+//Next we will set up the rasberry pi to take a remote desktop connection so you dont have to have it plugged in to a tv or monitor
+  sudo apt update
+  sudo apt install realvnc-vnc-server realvnc-vnc-viewer
+  sudo reboot
+//launch the console again
+  sudo raspi-config
+//select option 5 "interface options"
+//enable SSH and VNC
+  sudo ifconfig
+//you are looking for the line wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+//right below this you will see an ip address probally along the lines of 192.168.something.something
+//take note of this ip address
+//download and setup on windows pc - https://www.realvnc.com/en/connect/download/viewer/
+//go to file->new connection
+//The Ip address/host name will be the ip address you just grabbed
+//choose a random name to name it
+//a new icon will popup on the dash board click it
+//the user name and password will be what you noted earilier
+//you should now be able to do all futher steps from the confort of your laptop
+
+//next we will set up java!
+sudo apt update
+sudo apt install openjdk-8-jdk
+sudo update-alternatives --config java
+//if /usr/lib/jvm/java-8-openjdk-armhf/jre/bin/java   1081      manual mode does not have a* infornt of it press the coressponding number and java will switch to taht version
+
+//next we will set up netbeans whcih is an ide that packages together files into jar files and sends them to the rasberry pie making our lifes much easier
+//download this on windows https://netbeans.apache.org/download/index.html
+//when netbeans laucnhes on the menue bar along the top select tools -> plugins -> installed -> java se -> activate
+//next go to tools-> java platform -> add platfrom-> remote platform
+//name it whatever, the host will be the Ip addres we used before, password will be the password we used before
+//set the remote JRE path to /usr/lib/jvm/jdk-8-oracle-arm32-vfp-hflt/jre and the working Dir should automatiically fill in, however if it dosent set it too /home/pi/NetBeansProjects
+//click finsih and it should establish a connection and you should see a folder created in /home/pi called netbeans on the rasberry pi
+//you should see something called whatever you name the platform in the platform window
+//select it and click test platform to make sure it works
+//Side note vnc viewer and netbeans do not like it when the host computer swtiches from 2.4 g to 5g so pick one and stay on that network
+
+
+//next file-> new project-> java with ant -> java application
+//name the project Calander1 --this is mostly for the excutable script later on
+//un check create mainclass as we will assighn our own later. Click finsih
+//you should now have a folder much like the eclipse ide.
+//next open up the Calander1 -> soruce packages ->right click on <default pacakge> click new class.
+//Name the class whatever class your trasnfering over from exclipse ide 
+//next if you ahvent already create a new class inside the package for the sql file and the classproject file
+//set the packages of both files to the package in netbeans
+//right click on the Calander1 project not package and go down to properties. Set the runtime platform to the one we created earilier for the rasberry pi and the main class to
+calander1.classproject
+
+
+//Go back into Calander 1 properties -> libraries -> click plus button by classpath ->add external jar file->add mssql-jdbc-8.4.1.jre8 , we downloaded this earlier for eclipse
+//Now click the big green run button and you should see the ip adress of the rasberry pi refrenced in the console. If you dont it means its running locally
+//the program will throw an error as it cant handle a headless Ui, however now the files have been transfered to the rasberry pi.
+//to check go to /home/pi/NetBeansProjects/Calander1/dist and you should see the Calander1.jar. Double clcik it ->calander1 and you should see all the classes
+
+_________________NEW___________________________________________
+//running the file on pi
+//Next we will set up the python scripts
+//open rasberrypi console
+sudo apt update
+sudo apt install python3 idle3
+python3
+print("hello world")
+
+//if that worked then python3 has been sucesffuly installed
+// Next find the file location /home/pi/NetBeansProjects/Calander1/dist
+//right click and select new file, do this twice for each respective python file and name each Validate.py and Hash.py
+//next right click on each and select open with, then select python3 idle
+//Copy and paste the respective code needed for each file and click file->save
+//next go into netbeans and find the create procedure path lines, 
+//respectively mine were lines 2456 for the Hash.py and lines 160 for the Validate.py
+//Assuming you have followed my steps very carefully above you should be able to copy and paste the following paths
+
+--"python3","/home/pi/NetBeansProjects/Calander1/dist/Validate.py" for line 160
+--"python3","/home/pi/NetBeansProjects/Calander1/dist/Hash.py" for line 2456
+___________________________________ABOVE NEW____________________________
+
+//open rasberrypi console
+cd /home/pi/NetBeansProjects/Calander1/dist
+java -cp Calander1.jar calander1.classproject
+//the calander ui should now pop up and run like normal
+
+
+
+ //Next we will create an executable on the desktop so you dont have to do this each time
+ //first right click on the desktop of teh rasberry pi and create a new nextfile called Calander.sh
+ //next open the terminal
+ sudo apt-get install xterm
+ cd /home/pi/Desktop
+ chmod +x Calander.sh
+ //next copy the conents of the file ShellScriptExe from github into the file and save. Then click file an click execute and IF you followed all the steps above the calander should open!!!!
+ 
+
+
+  
+  
