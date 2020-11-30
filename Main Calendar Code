@@ -2514,15 +2514,14 @@ public class classproject extends JFrame {
 
 							BufferedReader buffer = new BufferedReader(new InputStreamReader(process.getInputStream()));
 							
-							String line = buffer.readLine();
-							String line2=buffer.readLine();
+							String result = buffer.readLine();
+							String result2=buffer.readLine();
 									
-							System.out.println(line);
-							System.out.println(line2);
+							
 						
 						
 							
-						CreateUser creating=new CreateUser(name2.getText(), lastname2.getText(), userset.getText(),email2.getText(),line2,line);
+						CreateUser creating=new CreateUser(name2.getText(), lastname2.getText(), userset.getText(),email2.getText(),result2,result);
 						if(creating.checkDuplicate()==0) {
 							System.out.println("username is used");
 						}
