@@ -1,12 +1,9 @@
-/* I pull from the MySQL server using the retrieval methods programmed by Caden, populate an ArrayList in the main code block with that information, and use nested for/if 
-statements to populate the relevant dates with colored symbols matching the color specified during event creation. */
-
 package Calendar;
 
-//importing all the necessary items to create the calendar
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GraphicsDevice;
@@ -29,20 +26,32 @@ import javax.swing.JComboBox;
 import javax.swing.SwingConstants;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.LineBorder;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.StyleConstants;
 
-import Calendar.RetriveEvent.populateEvent;
-import Calendar.RetriveEvent.populateTime;
 
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.*;
 
 
+// Implementing the log in frame into the calendar
 public class classproject extends JFrame {
 	//creating an array with the name of the months
 	static String[] months= {"January","February","March","April","May","June","July","August","September","October","November","December"};
+	static String[] weekDays = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+	static String[] days = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", 
+							"17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31",};
 	static JTextField textfield1;
 	static JTextField textfield2;
 	static JTextField textfield3;
@@ -53,62 +62,256 @@ public class classproject extends JFrame {
 //		user.retriveEventForUser();
 //		}
 
-	public static void main(String[] args) throws ClassNotFoundException, SQLException {	
-	
+	public static void main(String[] args) throws ClassNotFoundException, SQLException {
+		
+		//Creating the buttons that will be implemented in the log in frame
+		JButton create = new JButton("Don't have an account?");	
+		JButton login = new JButton("log in");	
+		JButton Creating= new JButton("Create your account");
+    //creating an arraylist and adding the buttons to it, making it easy to get them all to be as similar as possible
+    	ArrayList<JButton> buttons= new ArrayList<JButton>();
+    
+    	buttons.add(create);
+    	buttons.add(login);
+    	buttons.add(Creating);
+    	
+    	//Creating  a for loop to give all the buttons a similar set up
+    	for(int i=0;i<buttons.size();i++) {
+    		
+    		buttons.get(i).setFocusable(false);
+    		
+    		buttons.get(i).setFont(new Font("Arial", Font.PLAIN, 60));
+    		
+    		buttons.get(i).setHorizontalAlignment(SwingConstants.RIGHT);
+    		buttons.get(i).setVerticalAlignment(SwingConstants.BOTTOM);
+    		
+    		buttons.get(i).setBorder(new LineBorder(Color.black));
+    		//creating a light gray background color for all of the days
+    		buttons.get(i).setBackground(Color.LIGHT_GRAY);
+    	}
+    	//giving the buttons their location
+    	create.setBounds(375,500,1000,70);	login.setBounds(750,650,250,60);;
+    	//creating a new frame
+        classproject frame = new classproject();
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        //Creating textfields to give the user instructions on the log in
+        JTextField username=new JTextField("Enter username:");
+        JTextField password=new JTextField("Enter password:");
+        //creating a title for the frame
+        JTextField title=new JTextField("Enter your account");
+        //creating textfields where the user will enter information in order to log in
+        JTextField passwordset=new JTextField("");
+        JTextField userset=new JTextField("");
+        //setting the color of the border of the textfields to black to make the fields easy to locate
+        passwordset.setBorder(new LineBorder(Color.black));
+        userset.setBorder(new LineBorder(Color.black));
+       username.setBorder(new LineBorder(Color.black));
+       password.setBorder(new LineBorder(Color.black));
+       //giving the textfields a location
+    	username.setBounds(200, 300, 700, 60);
+    	userset.setBounds(1100, 300, 600, 60);
+    	password.setBounds(200, 400, 700, 60);
+    	passwordset.setBounds(1100, 400, 600, 60);
+    	title.setBounds(400, 100, 1300, 142);
+    	
+    	
+    	// indicating which textfields we do not want the user to be able to edit
+    	title.setEditable(false);
+    	username.setEditable(false);
+    	password.setEditable(false);
+    	//giving the title a new bigger font
+    	title.setFont(new Font("Arial", Font.PLAIN, 120));
+    	username.setFont(new Font("Arial", Font.PLAIN, 60));
+    	password.setFont(new Font("Arial", Font.PLAIN, 60));
+    	userset.setFont(new Font("Arial", Font.PLAIN, 60));
+    	passwordset.setFont(new Font("Arial", Font.PLAIN, 60));
+    	//adding the buttons and text fields to the frame
+    	frame.add(password);
+    	frame.add(username);
+    	frame.add(title);
+    	frame.add(passwordset);
+    	frame.add(userset);
+    
+		//set the frame size
+		//frame.setSize(1050, 700);
+		frame.setLayout(null);
+		frame.setVisible(true);
 		
 		
+		
+
+		//adding each button that we want on this frame
+		frame.add(create);
+		frame.add(login);
+
+		// disposing the JFrame when the user hits the close button
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		// giving the log in button an action listener that will check the username and password
+		login.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent login){
+				
+				//using try statement to catch exceptions
+				try {
+					
+					String h_Pass = "";
+                    String salt ="";
+                    GetSaltAndHash salt_And_Hash = new GetSaltAndHash(userset.getText());
+                    ResultSet pulledSaltAndHash = salt_And_Hash.RetriveSAndH();
+                    while (pulledSaltAndHash.next()) {
+                        h_Pass=pulledSaltAndHash.getString("H_PASS");
+                        salt=pulledSaltAndHash.getString("SALT");
+                    }
+                    
+                    if(h_Pass=="") {
+                    	userset.setText("invalid");
+                    	passwordset.setText("invalid");
+                    }
+					//using a process builder to open the python file specified and run it
+                    ProcessBuilder processbuilder = new ProcessBuilder("py","c:\\\\Calendar\\\\Validate.py",""+h_Pass,""+salt,""+passwordset.getText());
+					//telling the process builder to start running it
+					Process process = processbuilder.start();
+					//using  a buffered reader to read the output of the processbuilder
+					BufferedReader buffer = new BufferedReader(new InputStreamReader(process.getInputStream()));
+					// giving a string the value of the output of the python file so its easy to compare
+					String check = buffer.readLine();
+					//printing out the result
+					System.out.println(check);
+					//if the result is valid the program will open a new frame with the calendar of the user
+					if(check.equals("Valid")) {
+						
+					frame.dispose();
+					
+					
+				
+					
+					
+				
+				
+
 		//creating a new gregorian calendar to help set the current day and year
-		GregorianCalendar e=new GregorianCalendar();
+		GregorianCalendar grego=new GregorianCalendar();
 		//creating the buttons for each day of the month
 		JButton first = new JButton("1");	JButton second = new JButton("2"); JButton third = new JButton("3");	JButton fourth = new JButton("4");
-    	JButton fifth = new JButton("5");	JButton sixth = new JButton("6");	JButton seventh = new JButton("7");
-    	JButton eighth = new JButton("8");	JButton ninth = new JButton("9");	JButton tenth = new JButton("10");
-    	JButton eleventh = new JButton("11");	JButton twelvth = new JButton("12");	JButton thirteenth = new JButton("13");
-    	JButton fourteenth = new JButton("14");	JButton fifteenth = new JButton("15");	JButton sixteenth = new JButton("16");
-    	JButton seventeenth = new JButton("17");	JButton eighteenth = new JButton("18");	JButton nineteenth = new JButton("19");
-    	JButton twentieth = new JButton("20");	JButton twentyfirst = new JButton("21");	JButton twentysecond = new JButton("22");
-    	JButton twentythird = new JButton("23");	JButton twentyfourth = new JButton("24");	JButton twentyfifth = new JButton("25");
-    	JButton twentysixth = new JButton("26");	JButton twentyseventh = new JButton("27");	JButton twentyeighth = new JButton("28");
-    	JButton twentyninth = new JButton("29");	JButton thirtieth = new JButton("30");	JButton thirtyfirst = new JButton("31");
-    	JButton thirtysecond = new JButton("1");	JButton addEvent = new JButton("+"); // creating a button to add events
-    	//creating an array list to put the buttons representing each day
-    	ArrayList<JButton> one= new ArrayList<JButton>();
-    	//adding all of the buttons
-    	one.add(first);one.add(second);one.add(third);one.add(fourth);
-    	one.add(fifth);one.add(sixth);one.add(seventh);one.add(eighth);
-    	one.add(ninth);one.add(tenth);one.add(eleventh);one.add(twelvth);
-    	one.add(thirteenth);one.add(fourteenth);one.add(fifteenth);one.add(sixteenth);
-    	one.add(seventeenth);one.add(eighteenth);one.add(nineteenth);one.add(twentieth);
-    	one.add(twentyfirst);one.add(twentysecond);one.add(twentythird);one.add(twentyfourth);
-    	one.add(twentyfifth);one.add(twentysixth);one.add(twentyseventh);one.add(twentyeighth);
-    	one.add(twentyninth);one.add(thirtieth);one.add(thirtyfirst);one.add(thirtysecond);
-    	//creating a for loop to get the same results for each button
-    	for(int i=0;i<one.size();i++) {
-    		//setting the focusable to false so they cannot gain focus
-    		one.get(i).setFocusable(false);
-    		//giving the information in each button a font
-    		one.get(i).setFont(new Font("Arial", Font.PLAIN, 40));
-    		//align the info of the button to the right and to the button
-    		one.get(i).setHorizontalAlignment(SwingConstants.RIGHT);
-    		one.get(i).setVerticalAlignment(SwingConstants.BOTTOM);
-    		//creating a border of color black
-    		one.get(i).setBorder(new LineBorder(Color.black));
-    		//creating a light gray background color for all of the days
-    		one.get(i).setBackground(Color.LIGHT_GRAY);
-    	}
-    	
-    	// Implementing an '+' icon to add events to the calendar
-    	addEvent.setFocusable(false);
-    	addEvent.setFont(new Font("Arial", Font.PLAIN, 60));
-    	addEvent.setHorizontalAlignment(SwingConstants.CENTER);
-    	addEvent.setVerticalAlignment(SwingConstants.CENTER);
-    	addEvent.setBorder(new LineBorder(Color.black));
-    	addEvent.setForeground(Color.BLACK);
-    	addEvent.setBounds(1010,120, 100, 100);
+  	JButton fifth = new JButton("5");	JButton sixth = new JButton("6");	JButton seventh = new JButton("7");
+  	JButton eighth = new JButton("8");	JButton ninth = new JButton("9");	JButton tenth = new JButton("10");
+  	JButton eleventh = new JButton("11");	JButton twelvth = new JButton("12");	JButton thirteenth = new JButton("13");
+  	JButton fourteenth = new JButton("14");	JButton fifteenth = new JButton("15");	JButton sixteenth = new JButton("16");
+  	JButton seventeenth = new JButton("17");	JButton eighteenth = new JButton("18");	JButton nineteenth = new JButton("19");
+  	JButton twentieth = new JButton("20");	JButton twentyfirst = new JButton("21");	JButton twentysecond = new JButton("22");
+  	JButton twentythird = new JButton("23");	JButton twentyfourth = new JButton("24");	JButton twentyfifth = new JButton("25");
+  	JButton twentysixth = new JButton("26");	JButton twentyseventh = new JButton("27");	JButton twentyeighth = new JButton("28");
+  	JButton twentyninth = new JButton("29");	JButton thirtieth = new JButton("30");	JButton thirtyfirst = new JButton("31");
+  	JButton colors=new JButton("Colors");  JButton share= new JButton("!");  JButton refresh=new JButton("refresh");
+  	JButton thirtysecond = new JButton("1");	JButton addEvent = new JButton("+"); // creating a button to add events
+  	//creating an array list to put the buttons representing each day
+  	ArrayList<JButton> one= new ArrayList<JButton>();
+  	//adding all of the buttons
+  	one.add(first);one.add(second);one.add(third);one.add(fourth);
+  	one.add(fifth);one.add(sixth);one.add(seventh);one.add(eighth);
+  	one.add(ninth);one.add(tenth);one.add(eleventh);one.add(twelvth);
+  	one.add(thirteenth);one.add(fourteenth);one.add(fifteenth);one.add(sixteenth);
+  	one.add(seventeenth);one.add(eighteenth);one.add(nineteenth);one.add(twentieth);
+  	one.add(twentyfirst);one.add(twentysecond);one.add(twentythird);one.add(twentyfourth);
+  	one.add(twentyfifth);one.add(twentysixth);one.add(twentyseventh);one.add(twentyeighth);
+  	one.add(twentyninth);one.add(thirtieth);one.add(thirtyfirst);one.add(thirtysecond);
+  	//creating a for loop to get the same results for each button
+  	for(int i=0;i<one.size();i++) {
+  		//setting the focusable to false so they cannot gain focus
+  		one.get(i).setFocusable(false);
+  		//giving the information in each button a font
+  		one.get(i).setFont(new Font("Arial", Font.PLAIN, 40));
+  		//align the info of the button to the right and to the button
+  		one.get(i).setHorizontalAlignment(SwingConstants.RIGHT);
+  		one.get(i).setVerticalAlignment(SwingConstants.BOTTOM);
+  		//creating a border of color black
+  		one.get(i).setBorder(new LineBorder(Color.black));
+  		//creating a light gray background color for all of the days
+  		one.get(i).setBackground(Color.LIGHT_GRAY);
+  	}
+  	
+  	colors.setFocusable(false);
+	colors.setFont(new Font("Arial", Font.PLAIN, 40));
+	colors.setHorizontalAlignment(SwingConstants.RIGHT);
+	colors.setVerticalAlignment(SwingConstants.BOTTOM);
+	colors.setBorder(new LineBorder(Color.black));
+	colors.setBackground(Color.LIGHT_GRAY);
+	
+	refresh.setFocusable(false);
+	refresh.setFont(new Font("Arial", Font.PLAIN, 40));
+	refresh.setHorizontalAlignment(SwingConstants.RIGHT);
+	refresh.setVerticalAlignment(SwingConstants.BOTTOM);
+	refresh.setBorder(new LineBorder(Color.black));
+	refresh.setBackground(Color.LIGHT_GRAY);
+	
+  	
+  	// Implementing an '+' icon to add events to the calendar
+  	addEvent.setFocusable(false);
+  	addEvent.setFont(new Font("Arial", Font.PLAIN, 60));
+  	addEvent.setHorizontalAlignment(SwingConstants.CENTER);
+  	addEvent.setVerticalAlignment(SwingConstants.CENTER);
+  	addEvent.setBorder(new LineBorder(Color.black));
+  	addEvent.setForeground(Color.BLACK);
+  	addEvent.setBounds(1010,120, 100, 100);
 
-    	//changing the color of the current day so it is visible
-    	one.get(e.getTime().getDate()-1).setBackground(Color.cyan);
-    	//locating each button into the Jframe
+  	//changing the color of the current day so it is visible
+  	one.get(grego.getTime().getDate()-1).setBackground(Color.cyan);
+  	//locating each button into the Jframe
+
+    Calendar cal = Calendar.getInstance();
+    cal.set(Calendar.DAY_OF_MONTH, 1);
+    if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+    	first.setBounds(32,230,158,142);	second.setBounds(190,230,158,142);	third.setBounds(348,230,158,142);
+    	fourth.setBounds(506,230,158,142);	fifth.setBounds(664,230,158,142);	sixth.setBounds(822,230,158,142);
+    	seventh.setBounds(980,230,158,142);	eighth.setBounds(32,372,158,142);	ninth.setBounds(190,372,158,142);
+    	tenth.setBounds(348,372,158,142);	eleventh.setBounds(506,372,158,142);	twelvth.setBounds(664,372,158,142);
+    	thirteenth.setBounds(822,372,158,142);	fourteenth.setBounds(980,372,158,142);	fifteenth.setBounds(32,514,158,142);
+    	sixteenth.setBounds(190,514,158,142);	seventeenth.setBounds(348,514,158,142);	eighteenth.setBounds(506,514,158,142);
+    	nineteenth.setBounds(664,514,158,142);	twentieth.setBounds(822,514,158,142);	twentyfirst.setBounds(980,514,158,142);
+    	twentysecond.setBounds(32,656,158,142);	twentythird.setBounds(190,656,158,142);	twentyfourth.setBounds(348,656,158,142);
+    	twentyfifth.setBounds(506,656,158,142);	twentysixth.setBounds(664,656,158,142);	twentyseventh.setBounds(822,656,158,142);
+    	twentyeighth.setBounds(980,656,158,142);	twentyninth.setBounds(32,798,158,142);	thirtieth.setBounds(190,798,158,142);
+    	thirtyfirst.setBounds(348,798,158,142); 	
+    }
+    if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY) {
+    	first.setBounds(190,230,158,142);	second.setBounds(348,230,158,142);	third.setBounds(506,230,158,142);
+    	fourth.setBounds(664,230,158,142);	fifth.setBounds(822,230,158,142);	sixth.setBounds(980,230,158,142);
+    	seventh.setBounds(32,372,158,142);	eighth.setBounds(190,372,158,142);	ninth.setBounds(348,372,158,142);
+    	tenth.setBounds(506,372,158,142);	eleventh.setBounds(664,372,158,142);	twelvth.setBounds(822,372,158,142);
+    	thirteenth.setBounds(980,372,158,142);	fourteenth.setBounds(32,514,158,142);	fifteenth.setBounds(190,514,158,142);
+    	sixteenth.setBounds(348,514,158,142);	seventeenth.setBounds(506,514,158,142);	eighteenth.setBounds(664,514,158,142);
+    	nineteenth.setBounds(822,514,158,142);	twentieth.setBounds(980,514,158,142);	twentyfirst.setBounds(32,656,158,142);
+    	twentysecond.setBounds(190,656,158,142);	twentythird.setBounds(348,656,158,142);	twentyfourth.setBounds(506,656,158,142);
+    	twentyfifth.setBounds(664,656,158,142);	twentysixth.setBounds(822,656,158,142);	twentyseventh.setBounds(980,656,158,142);
+    	twentyeighth.setBounds(32,798,158,142);	twentyninth.setBounds(190,798,158,142);	thirtieth.setBounds(348,798,158,142);
+    	thirtyfirst.setBounds(506,798,158,142); 	
+    }
+    if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.TUESDAY) {
+    	first.setBounds(348,230,158,142);	second.setBounds(506,230,158,142);	third.setBounds(664,230,158,142);
+    	fourth.setBounds(822,230,158,142);	fifth.setBounds(980,230,158,142);	sixth.setBounds(32,372,158,142);
+    	seventh.setBounds(190,372,158,142);	eighth.setBounds(348,372,158,142);	ninth.setBounds(506,372,158,142);
+    	tenth.setBounds(664,372,158,142);	eleventh.setBounds(822,372,158,142);	twelvth.setBounds(980,372,158,142);
+    	thirteenth.setBounds(32,514,158,142);	fourteenth.setBounds(190,514,158,142);	fifteenth.setBounds(348,514,158,142);
+    	sixteenth.setBounds(506,514,158,142);	seventeenth.setBounds(664,514,158,142);	eighteenth.setBounds(822,514,158,142);
+    	nineteenth.setBounds(980,514,158,142);	twentieth.setBounds(32,656,158,142);	twentyfirst.setBounds(190,656,158,142);
+    	twentysecond.setBounds(348,656,158,142);	twentythird.setBounds(506,656,158,142);	twentyfourth.setBounds(664,656,158,142);
+    	twentyfifth.setBounds(822,656,158,142);	twentysixth.setBounds(980,656,158,142);	twentyseventh.setBounds(32,798,158,142);
+    	twentyeighth.setBounds(190,798,158,142);	twentyninth.setBounds(348,798,158,142);	thirtieth.setBounds(506,798,158,142);
+    	thirtyfirst.setBounds(664,798,158,142); 	
+    }
+    if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.WEDNESDAY) {
+    	first.setBounds(506,230,158,142);	second.setBounds(664,230,158,142);	third.setBounds(822,230,158,142);
+    	fourth.setBounds(980,230,158,142);	fifth.setBounds(32,372,158,142);	sixth.setBounds(190,372,158,142);
+    	seventh.setBounds(348,372,158,142);	eighth.setBounds(506,372,158,142);	ninth.setBounds(664,372,158,142);
+    	tenth.setBounds(822,372,158,142);	eleventh.setBounds(980,372,158,142);	twelvth.setBounds(32,514,158,142);
+    	thirteenth.setBounds(190,514,158,142);	fourteenth.setBounds(348,514,158,142);	fifteenth.setBounds(506,514,158,142);
+    	sixteenth.setBounds(664,514,158,142);	seventeenth.setBounds(822,514,158,142);	eighteenth.setBounds(980,514,158,142);
+    	nineteenth.setBounds(32,656,158,142);	twentieth.setBounds(190,656,158,142);	twentyfirst.setBounds(348,656,158,142);
+    	twentysecond.setBounds(506,656,158,142);	twentythird.setBounds(664,656,158,142);	twentyfourth.setBounds(822,656,158,142);
+    	twentyfifth.setBounds(980,656,158,142);	twentysixth.setBounds(32,798,158,142);	twentyseventh.setBounds(190,798,158,142);
+    	twentyeighth.setBounds(348,798,158,142);	twentyninth.setBounds(506,798,158,142);	thirtieth.setBounds(664,798,158,142);
+    	thirtyfirst.setBounds(822,798,158,142); 	
+    }
+    if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.THURSDAY) {
     	first.setBounds(664,230,158,142);	second.setBounds(822,230,158,142);	third.setBounds(980,230,158,142);
     	fourth.setBounds(32,372,158,142);	fifth.setBounds(190,372,158,142);	sixth.setBounds(348,372,158,142);
     	seventh.setBounds(506,372,158,142);	eighth.setBounds(664,372,158,142);	ninth.setBounds(822,372,158,142);
@@ -119,73 +322,105 @@ public class classproject extends JFrame {
     	twentysecond.setBounds(664,656,158,142);	twentythird.setBounds(822,656,158,142);	twentyfourth.setBounds(980,656,158,142);
     	twentyfifth.setBounds(32,798,158,142);	twentysixth.setBounds(190,798,158,142);	twentyseventh.setBounds(348,798,158,142);
     	twentyeighth.setBounds(506,798,158,142);	twentyninth.setBounds(664,798,158,142);	thirtieth.setBounds(822,798,158,142);
-    	thirtyfirst.setBounds(980,798,158,142); 
-    	
-    	first.setLayout(new BorderLayout()); second.setLayout(new BorderLayout()); third.setLayout(new BorderLayout()); 
-    	fourth.setLayout(new BorderLayout()); fifth.setLayout(new BorderLayout()); sixth.setLayout(new BorderLayout());
-    	seventh.setLayout(new BorderLayout()); eighth.setLayout(new BorderLayout()); ninth.setLayout(new BorderLayout());
-    	tenth.setLayout(new BorderLayout()); eleventh.setLayout(new BorderLayout()); twelvth.setLayout(new BorderLayout());
-    	thirteenth.setLayout(new BorderLayout()); fourteenth.setLayout(new BorderLayout()); fifteenth.setLayout(new BorderLayout());
-    	sixteenth.setLayout(new BorderLayout()); seventeenth.setLayout(new BorderLayout()); eighteenth.setLayout(new BorderLayout());
-    	nineteenth.setLayout(new BorderLayout()); twentieth.setLayout(new BorderLayout()); twentyfirst.setLayout(new BorderLayout());
-    	twentysecond.setLayout(new BorderLayout()); twentythird.setLayout(new BorderLayout()); twentyfourth.setLayout(new BorderLayout());
-    	twentyfifth.setLayout(new BorderLayout()); twentysixth.setLayout(new BorderLayout()); twentyseventh.setLayout(new BorderLayout());
-    	twentyeighth.setLayout(new BorderLayout()); twentyninth.setLayout(new BorderLayout()); thirtieth.setLayout(new BorderLayout());
-    	thirtyfirst.setLayout(new BorderLayout());
-    	
-    	JLabel blue = new JLabel("*");
-    	blue.setForeground(Color.blue);
-    	blue.setFont(blue.getFont().deriveFont(72f));
-    	JLabel green = new JLabel("*");
-    	green.setForeground(Color.green);
-    	green.setFont(green.getFont().deriveFont(72f));
-    	JLabel yellow = new JLabel("*");
-    	yellow.setForeground(Color.yellow);
-    	yellow.setFont(yellow.getFont().deriveFont(72f));
-    	JLabel red = new JLabel("*");
-    	red.setForeground(Color.red);
-    	red.setFont(red.getFont().deriveFont(72f));
+    	thirtyfirst.setBounds(980,798,158,142); 	
+    }
+    if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY) {
+    	first.setBounds(822,230,158,142);	second.setBounds(980,230,158,142);	third.setBounds(32,372,158,142);
+    	fourth.setBounds(190,372,158,142);	fifth.setBounds(348,372,158,142);	sixth.setBounds(506,372,158,142);
+    	seventh.setBounds(664,372,158,142);	eighth.setBounds(822,372,158,142);	ninth.setBounds(980,372,158,142);
+    	tenth.setBounds(32,514,158,142);	eleventh.setBounds(190,514,158,142);	twelvth.setBounds(348,514,158,142);
+    	thirteenth.setBounds(506,514,158,142);	fourteenth.setBounds(664,514,158,142);	fifteenth.setBounds(822,514,158,142);
+    	sixteenth.setBounds(980,514,158,142);	seventeenth.setBounds(32,656,158,142);	eighteenth.setBounds(190,656,158,142);
+    	nineteenth.setBounds(348,656,158,142);	twentieth.setBounds(506,656,158,142);	twentyfirst.setBounds(664,656,158,142);
+    	twentysecond.setBounds(822,656,158,142);	twentythird.setBounds(980,656,158,142);	twentyfourth.setBounds(32,798,158,142);
+    	twentyfifth.setBounds(190,798,158,142);	twentysixth.setBounds(348,798,158,142);	twentyseventh.setBounds(506,798,158,142);
+    	twentyeighth.setBounds(664,798,158,142);	twentyninth.setBounds(822,798,158,142);	thirtieth.setBounds(980,798,158,142);
+    	thirtyfirst.setBounds(32,940,158,142); 	
+    }
+    if (cal.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY) {
+    	first.setBounds(980,230,158,142);	second.setBounds(32,372,158,142);	third.setBounds(190,372,158,142);
+    	fourth.setBounds(348,372,158,142);	fifth.setBounds(506,372,158,142);	sixth.setBounds(664,372,158,142);
+    	seventh.setBounds(822,372,158,142);	eighth.setBounds(980,372,158,142);	ninth.setBounds(32,514,158,142);
+    	tenth.setBounds(190,514,158,142);	eleventh.setBounds(348,514,158,142);	twelvth.setBounds(506,514,158,142);
+    	thirteenth.setBounds(664,514,158,142);	fourteenth.setBounds(822,514,158,142);	fifteenth.setBounds(980,514,158,142);
+    	sixteenth.setBounds(32,656,158,142);	seventeenth.setBounds(190,656,158,142);	eighteenth.setBounds(348,656,158,142);
+    	nineteenth.setBounds(506,656,158,142);	twentieth.setBounds(664,656,158,142);	twentyfirst.setBounds(822,656,158,142);
+    	twentysecond.setBounds(980,656,158,142);	twentythird.setBounds(32,798,158,142);	twentyfourth.setBounds(190,798,158,142);
+    	twentyfifth.setBounds(348,798,158,142);	twentysixth.setBounds(506,798,158,142);	twentyseventh.setBounds(664,798,158,142);
+    	twentyeighth.setBounds(822,798,158,142);	twentyninth.setBounds(980,798,158,142);	thirtieth.setBounds(32,940,158,142);
+    	thirtyfirst.setBounds(190,940,158,142); 	
+    }
+  	
+  	first.setLayout(new BorderLayout()); second.setLayout(new BorderLayout()); third.setLayout(new BorderLayout()); 
+  	fourth.setLayout(new BorderLayout()); fifth.setLayout(new BorderLayout()); sixth.setLayout(new BorderLayout());
+  	seventh.setLayout(new BorderLayout()); eighth.setLayout(new BorderLayout()); ninth.setLayout(new BorderLayout());
+  	tenth.setLayout(new BorderLayout()); eleventh.setLayout(new BorderLayout()); twelvth.setLayout(new BorderLayout());
+  	thirteenth.setLayout(new BorderLayout()); fourteenth.setLayout(new BorderLayout()); fifteenth.setLayout(new BorderLayout());
+  	sixteenth.setLayout(new BorderLayout()); seventeenth.setLayout(new BorderLayout()); eighteenth.setLayout(new BorderLayout());
+  	nineteenth.setLayout(new BorderLayout()); twentieth.setLayout(new BorderLayout()); twentyfirst.setLayout(new BorderLayout());
+  	twentysecond.setLayout(new BorderLayout()); twentythird.setLayout(new BorderLayout()); twentyfourth.setLayout(new BorderLayout());
+  	twentyfifth.setLayout(new BorderLayout()); twentysixth.setLayout(new BorderLayout()); twentyseventh.setLayout(new BorderLayout());
+  	twentyeighth.setLayout(new BorderLayout()); twentyninth.setLayout(new BorderLayout()); thirtieth.setLayout(new BorderLayout());
+  	thirtyfirst.setLayout(new BorderLayout());
+  	
+  	// Create new labels to apply to day JButtons. If an event is found for that corresponding day, a colored asterisk, the color matching the one specified when creating an event, will populate the corresponding button. 
+  	JLabel blue = new JLabel("*");
+  	blue.setForeground(Color.blue);
+  	blue.setFont(blue.getFont().deriveFont(72f));
+  	JLabel green = new JLabel("*");
+  	green.setForeground(Color.green);
+  	green.setFont(green.getFont().deriveFont(72f));
+  	JLabel yellow = new JLabel("*");
+  	yellow.setForeground(Color.yellow);
+  	yellow.setFont(yellow.getFont().deriveFont(72f));
+  	JLabel red = new JLabel("*");
+  	red.setForeground(Color.red);
+  	red.setFont(red.getFont().deriveFont(72f));
 
-    	
-    	//passing username to get events for
-    	RetriveEvent pullevent = new RetriveEvent("nathan.mnsu");
-    	String eventName = null;
-    	String eventReason = null;
-    	String start_Time = null;
-    	String end_Time = null;
-    	String eventColor = null;
-    	ArrayList<String> populate = new ArrayList<>();
-    	//try block needed because of sql requitemnt for throwing errors
-    	try {
-    	      //result set is a datatype that only works when surroned by try blocks and catching sql exceptions
-    	      //pulls all the events for the user from the class retriveEventForUser
-    	      
-    	         ResultSet listofitems=pullevent.retriveEventForUser();
-    		 
-    	        //testing code for formating if you enable .out.printf line below
-    		//System.out.printf("%-20s%-35s%-25s%-25s%s%n","Event Name","Event Notes/Discription","Start Time", "End Time", "Color");
-    	      
-    	      //while there are more items within the listofitems run
-    	      		while(listofitems.next()) {		
-    	      //sets a string varible equal to each part of the current item the list has
-    	      //you can do a lot with these strings, with date you can split and set each element of the split to an element in an array for easy minpulating
-    				eventName = listofitems.getString("EVENTNAME");
-    				eventReason = listofitems.getString("REASON");
-    				start_Time = listofitems.getString("START_TIME");
-    				end_Time = listofitems.getString("END_TIME");
-    				eventColor = listofitems.getString("COLOR");
-    				String output = (eventName + "--" + eventReason + "--" + start_Time + "--" + end_Time + "--" + eventColor);
-    				populate.add(output);
-    	         		 //enable to see output in print format
-    				//formats out for correcting spacing as a proof of concept for print
-    				//System.out.printf("%-20s%-35s%-25s%-25s%s%n",listofitems.getString("EVENTNAME"),listofitems.getString("REASON"),listofitems.getString("START_TIME"),listofitems.getString("END_TIME"),listofitems.getString("COLOR"));
-    			}
-    	      //catches sql errors
-    		} catch (ClassNotFoundException | SQLException e2) {
-    				// TODO Auto-generated catch block
-    				e2.printStackTrace();
-    	}
-    	
+  	
+  	//passing username to get events for
+  	RetriveEvent pullevent = new RetriveEvent(userset.getText());
+  	String eventName;
+  	String eventReason = null;
+  	String start_Time = null;
+  	String end_Time = null;
+  	String eventColor;
+  	ArrayList<String> populate = new ArrayList<>();
+  	ArrayList<String> populate2 = new ArrayList<>();
+  	//try block needed because of sql requitemnt for throwing errors
+  	try {
+  	      //result set is a datatype that only works when surroned by try blocks and catching sql exceptions
+  	      //pulls all the events for the user from the class retriveEventForUser
+  	      
+  	         ResultSet listofitems=pullevent.retriveEventForUser();
+  		 
+  	        //testing code for formating if you enable .out.printf line below
+  		//System.out.printf("%-20s%-35s%-25s%-25s%s%n","Event Name","Event Notes/Discription","Start Time", "End Time", "Color");
+  	      
+  	      //while there are more items within the listofitems run
+  	      		while(listofitems.next()) {		
+  	      //sets a string varible equal to each part of the current item the list has
+  	      //you can do a lot with these strings, with date you can split and set each element of the split to an element in an array for easy minpulating
+  				eventName = listofitems.getString("EVENTNAME");
+  				eventReason = listofitems.getString("REASON");
+  				start_Time = listofitems.getString("START_TIME");
+  				end_Time = listofitems.getString("END_TIME");
+  				eventColor = listofitems.getString("COLOR");
+  				String output = (eventName + " " + eventReason + " " + start_Time + " " + end_Time + " " + eventColor);
+  				String output2 = (eventName + ", " + eventReason + ":\n" + start_Time + " - " + end_Time + "\n");
+  				populate.add(output);
+  				populate2.add(output2);
+  	         		 //enable to see output in print format
+  				//formats out for correcting spacing as a proof of concept for print
+  				//System.out.printf("%-20s%-35s%-25s%-25s%s%n",listofitems.getString("EVENTNAME"),listofitems.getString("REASON"),listofitems.getString("START_TIME"),listofitems.getString("END_TIME"),listofitems.getString("COLOR"));
+  			}
+  	      //catches sql errors
+  		} catch (ClassNotFoundException | SQLException e2) {
+  				// TODO Auto-generated catch block
+  				e2.printStackTrace();
+  	}
+  	
+  	// Iterates through the size of the ArrayList. Adds previously defined variables locally. If a date corresponding to the current month is found, the symbol will be added. 
 		for (int j = 0; j < populate.size(); j++) {
 			if (populate.get(j).contains(" 1 ")) {
 				JLabel blueFirst = new JLabel("*");
@@ -1484,27 +1719,35 @@ public class classproject extends JFrame {
 				}
 			}
 		}
-    	
-  //Calendar JFrame 	
-    	//creating a new frame
-        classproject frame = new classproject();
-        //creating 2 panels, one for the month and year and the other one for the days of the month
-        JPanel panel1 = new JPanel();
-        JPanel panel2 = new JPanel();
-        Color color = panel1.getBackground();
-        //creating a jtextfield that includes the current month and the current year
-    	JTextField month = new JTextField(months[Calendar.getInstance().get(Calendar.MONTH)]+" "+(e.getTime().getYear()+1900));
-    	//creating a font for the month and year
-    	Font Month = new Font("Arial", Font.BOLD, 48);
-    	//setting the font
-    	month.setFont(Month);
-    	//giving the foreground color
-    	month.setForeground(Color.BLACK);
-    	//setting the bounds
-    	month.setBounds(565,30,500,100);
-    	//not able to edit
-    	month.setEditable(false);	month.setBorder(BorderFactory.createLineBorder(color));
-    	//setting the bounds of the first panel
+  	
+//Calendar JFrame 	
+  	//creating a new frame
+      classproject frame = new classproject();
+      //creating 2 panels, one for the month and year and the other one for the days of the month
+      JPanel panel1 = new JPanel();
+      JPanel panel2 = new JPanel();
+      JPanel panel3 = new JPanel();
+      Color color = panel1.getBackground();
+      //creating a jtextfield that includes the current month and the current year
+  	JTextField month = new JTextField(months[Calendar.getInstance().get(Calendar.MONTH)]+" "+(grego.getTime().getYear()+1900));
+  	JTextArea today = new JTextArea(weekDays[Calendar.getInstance().get(Calendar.DAY_OF_WEEK)-1] + ", " + months[Calendar.getInstance().get(Calendar.MONTH)] + " " + Calendar.getInstance().get(Calendar.DATE) + "\n\n");
+  	//creating a font for the month and year
+  	Font Month = new Font("Arial", Font.BOLD, 60);
+  	Font Today = new Font("Arial", Font.BOLD, 32);
+  	Font todayPop = new Font("Arial", Font.BOLD, 32);
+  	//setting the font
+  	month.setFont(Month);
+  	today.setFont(Today);
+  	//giving the foreground color
+  	month.setForeground(Color.BLACK);
+  	today.setForeground(Color.BLACK);
+  
+  	//setting the bounds
+  	month.setBounds(400,30,600,100);
+  	//not able to edit
+  	month.setEditable(false);	month.setBorder(BorderFactory.createLineBorder(color));
+  	today.setEditable(false);	today.setBorder(BorderFactory.createLineBorder(color));
+  	//setting the bounds of the first panel
 		panel1.setBounds(20,20,1130,200);
 		//create stroke border
 		panel1.setBorder(BorderFactory.createStrokeBorder(new BasicStroke(2.0f)));
@@ -1516,76 +1759,197 @@ public class classproject extends JFrame {
 		panel2.setBorder(BorderFactory.createStrokeBorder(new BasicStroke(2.0f)));
 		panel2.setLayout(new GridLayout(0, 1));
 		//set the frame size
-		frame.setSize(1200, 1000);
+		frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 		frame.setLayout(null);
 		frame.setVisible(true);
 		//adding the month and year
 		frame.add(month);
+		panel3.add(today);
 		frame.add(addEvent);
 
+		panel3.setBounds(1175,20,550,920);
+		//create stroke border
+		panel3.setBorder(BorderFactory.createStrokeBorder(new BasicStroke(2.0f)));
+		//creating a new grid
+		panel3.setLayout(new GridLayout(0, 1));
+
+		ArrayList<String> todayEvents = new ArrayList<>();
+		String month2 = months[Calendar.getInstance().get(Calendar.MONTH)].substring(0, 3);
+		
+		// Create a variable to search the arraylist to find events for today's date. 
+		String todayInt = (month2 + " " + Calendar.getInstance().get(Calendar.DATE));
+		today.setLineWrap(true);
+		// Search for the previously described variable. If found, the side panel is populated with events for today. 
+		for (int k = 0; k < populate2.size(); k++) {
+			if (populate2.get(k).contains(todayInt)) {
+				today.append("\n" + populate2.get(k));
+			}
+		}
+		colors.setBounds(100, 50, 200, 80);
+		refresh.setBounds(200, 150, 200, 50);
+		frame.add(refresh);
+		frame.add(colors);
+		
+		share.setBounds(100, 150,50, 50);
+		share.setBackground(Color.LIGHT_GRAY);
+		frame.add(share);
 		//adding each button representing each day
+		ArrayList<Integer> thirtyone=new ArrayList<Integer>();
+		thirtyone.add(0);
+		thirtyone.add(2);
+		thirtyone.add(4);
+		thirtyone.add(6);
+		thirtyone.add(7);
+		thirtyone.add(9);
+		thirtyone.add(11);
+		ArrayList<Integer> thirty=new ArrayList<Integer>();
+		thirty.add(3);
+		thirty.add(5);
+		thirty.add(8);
+		thirty.add(10);
+		ArrayList<Integer> twentyeight=new ArrayList<Integer>();
+		twentyeight.add(1);
+		
+		
+		//adding each button representing each day
+		if(thirtyone.contains(Calendar.getInstance().get(Calendar.MONTH))) {
 		for(int i=0;i<one.size();i++) {
 			frame.add(one.get(i));}
+		}
+		if(thirty.contains(Calendar.getInstance().get(Calendar.MONTH))) {
+			for(int i=0;i<30;i++) {
+				frame.add(one.get(i));}
+			}
+		if(twentyeight.contains(Calendar.getInstance().get(Calendar.MONTH))) {
+			for(int i=0;i<28;i++) {
+				frame.add(one.get(i));}
+			}
+
 
 
 		//adding the panels
 		frame.add(panel1, BorderLayout.CENTER);
 		frame.add(panel2, BorderLayout.CENTER);
+		frame.add(panel3, BorderLayout.CENTER);
 		// disposing the JFrame when the user hits the close button
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-	//SchedulingJFRAME	
-		//adding 4 new buttons
-		JButton appointment = new JButton("Add an appointment");
-		JButton event = new JButton("Add an event");
-		JButton cappointments= new JButton("See your appointments");
-		JButton cevents= new JButton("See your events");
-		//creating a new array list and adding all the buttons
-		ArrayList<JButton> two= new ArrayList<JButton>();
-		two.add(appointment);
-		two.add(event);
-		two.add(cappointments);
-		two.add(cevents);
-		
-		
+		colors.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent colors){ 
 
-		for(int i=0;i<two.size();i++) 
-		{
-    		//setting the focusable to false so they cannot gain focus
-    		two.get(i).setFocusable(false);
-    		//giving the information in each button a font
-    		two.get(i).setFont(new Font("Arial", Font.PLAIN, 40));
-    		//align the info of the button to the right and to the button
-    		two.get(i).setHorizontalAlignment(SwingConstants.RIGHT);
-    		two.get(i).setVerticalAlignment(SwingConstants.BOTTOM);
-    		//creating a border of color black
-    		two.get(i).setBorder(new LineBorder(Color.black));
-    	}
-		//giving the buttons a different color
-		event.setBackground(Color.blue);
-		appointment.setBackground(Color.red);
-		//setting the bounds and location for each button
-		appointment.setBounds(200,400,375,50);	
-		event.setBounds(200, 250, 250, 50);
-		cappointments.setBounds(200,700,425,50);	
-		cevents.setBounds(200, 550, 300, 50);
+				  classproject options = new classproject();
+			        JPanel title = new JPanel();
+			        JPanel option = new JPanel();
+			        options.setExtendedState(JFrame.MAXIMIZED_BOTH);
+			        Color color = panel1.getBackground();
+			        Font schedule = new Font("Arial", Font.BOLD, 48);
+			    	JTextField scheduling = new JTextField("Meaning of the Colors");
+			    	
+			    	JTextField red= new JTextField("");
+			    	JTextField red2= new JTextField("Appointments");
+			    	
+			    	JTextField blue= new JTextField("");
+			    	JTextField blue2= new JTextField("Birthdays/Anniversaries");
+			    	
+			    	JTextField yellow= new JTextField("");
+			    	JTextField yellow2= new JTextField("Activities");
+			    	
+			    	JTextField green= new JTextField("");
+			    	JTextField green2= new JTextField("Vacations");
+			    	
+			    	JTextField pink= new JTextField("");
+			    	JTextField pink2= new JTextField("Due Dates");
+			    	
+			    	JTextField orange= new JTextField("");
+			    	JTextField orange2= new JTextField("Dates");
+			    	
+			    	orange.setBackground(Color.ORANGE);
+			    	orange.setBounds(100, 700, 80, 80);
+			    	
+			    	orange2.setBounds(300, 700, 350, 80);
+			    	orange2.setFont(schedule);
+			    	
+			    	pink.setBackground(Color.MAGENTA);
+			    	pink.setBounds(100, 600, 80, 80);
+			    	
+			    	pink2.setBounds(300, 600, 350, 80);
+			    	pink2.setFont(schedule);
+			    	
+			    	green.setBackground(Color.GREEN);
+			    	green.setBounds(100, 500, 80, 80);
+			    	
+			    	green2.setBounds(300, 500, 350, 80);
+			    	green2.setFont(schedule);
+			    	
+			    	yellow.setBackground(Color.YELLOW);
+			    	yellow.setBounds(100, 400, 80, 80);
+			    	
+			    	yellow2.setBounds(300, 400, 350, 80);
+			    	yellow2.setFont(schedule);
+			    	
+			    	blue.setBackground(Color.BLUE);
+			    	blue.setBounds(100, 300, 80, 80);
+			    	
+			    	blue2.setBounds(400, 300, 650, 80);
+			    	blue2.setFont(schedule);
+			    	
+			    	red.setBackground(Color.RED);
+			    	red.setBounds(100, 200, 80, 80);
+			    	
+			    	red2.setBounds(400, 200, 650, 80);
+			    	red2.setFont(schedule);
+
+			    	
+			    	scheduling.setFont(schedule);
+			    	scheduling.setForeground(Color.black);
+			    	scheduling.setBounds(250,50,800,80);
+			    	red2.setEditable(false);
+			    	blue2.setEditable(false);
+			    	yellow2.setEditable(false);
+			    	green2.setEditable(false);
+			    	pink2.setEditable(false);
+			    	orange2.setEditable(false);
+			    	scheduling.setEditable(false);	scheduling.setBorder(BorderFactory.createLineBorder(color));
+					options.setSize(1000, 1000);
+					options.setLayout(null);
+					options.setVisible(true);
+					options.add(scheduling);
+					options.add(red);
+					options.add(red2);
+					options.add(blue);
+					options.add(blue2);
+					options.add(yellow);
+					options.add(yellow2);
+					options.add(green);
+					options.add(green2);
+					options.add(pink);
+					options.add(pink2);
+					options.add(orange);
+					options.add(orange2);
+					
+					options.add(title, BorderLayout.CENTER);
+					options.add(option, BorderLayout.CENTER);
+					options.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+			}
+		});
+		
 
 		
 		// Creating new JFrame that opens anytime the user clicks the '+' Icon to 
-    	// Adds and saves an event to the database
-    	
+  	// Adds and saves an event to the database
 		addEvent.addActionListener(new ActionListener() 
     	{
+			
 			// implementing all elements
 			
 			classproject addElement = new classproject();
 			
 			JTextField addingEvents;
 		    JTextField eventName;
-		    JTextField EventStartDate;
-		    JTextField EventEndDate;
 		    JTextArea reason;
 		    
+		    JComboBox EventEndDate;
+		    JComboBox EventStartDate;
 		    JComboBox eventStart;
 		    JComboBox eventEnd;
 		    JComboBox eventColor;
@@ -1596,7 +1960,10 @@ public class classproject extends JFrame {
 		    
 		    JButton submit;
 		    
-    		public void actionPerformed(ActionEvent e)
+		    GregorianCalendar calendar;
+		    
+		    
+    		public void actionPerformed(ActionEvent events)
     		{
     			// Event Start times
     			
@@ -1618,16 +1985,18 @@ public class classproject extends JFrame {
     		    		"10:00 PM", "10:15 PM", "10:30 PM", "10:45 PM", "11:00 PM", "11:15 PM",
     		    		"11:30 PM", "11:45 PM"};
     		    
+    		    
     		    // Event color options (Primary & Secondary colors) 
     		    // will implement the actual color so user can reference
     		    
-    		    String[] Colors = {"None","Red", "Yellow", "Blue", "Orange", "Green", "Violet"};
+    		    String[] Colors = {"None","Red", "Yellow", "Blue",
+    		    		"Orange", "Green", "Violet"};
     		    
     		    // creating all elements
     		    addingEvents = new JTextField("New Event");
     		    eventName = new JTextField("title");
-    		    EventStartDate =  new JTextField("11/12/2020");
-    		    EventEndDate =  new JTextField("11/12/2020");
+    		    EventStartDate =  new JComboBox();
+    		    EventEndDate =  new JComboBox();
     		    reason =new JTextArea("Description");
     		    eventStart = new JComboBox(Times);
     		    eventEnd = new JComboBox(Times);
@@ -1638,36 +2007,77 @@ public class classproject extends JFrame {
     		    submit = new JButton("ADD");
     		    
     		    // Necessary adjustments
-    		    Font addEvent = new Font("Courier", Font.BOLD, 28);
-    		    addingEvents.setFont(addEvent);
+    		    Font addEvent = new Font("Courier", Font.BOLD, 40);
+    		    addingEvents.setFont(new Font("Courier",Font.BOLD,80));
     		    addingEvents.setEditable(false);
     		    addingEvents.setBorder(BorderFactory.createLineBorder(color));
+    		    eventName.setFont(addEvent);
+    		    EventStartDate.setFont(addEvent);
+    		    EventEndDate.setFont(addEvent);
+    		    reason.setFont(addEvent);
+    		    eventStart.setFont(addEvent);
+    		    eventEnd.setFont(addEvent);
+    		    eventColor.setFont(addEvent);
+    		    startTimeLabel.setFont(addEvent);
+    		    endTimeLabel.setFont(addEvent);
+    		    eventColorLabel.setFont(addEvent);
+    		    submit.setFont(addEvent);
     		    
     		    eventName.setHorizontalAlignment(JTextField.CENTER);
-    		    Font EventNameFont = new Font("Arial", Font.ITALIC, 18);
+    		    Font EventNameFont = new Font("Arial", Font.ITALIC, 40);
     		    eventName.setFont(EventNameFont);
     		    
-    		    EventStartDate.setHorizontalAlignment(JTextField.CENTER);
-    		    EventEndDate.setHorizontalAlignment(JTextField.CENTER);
     		    
+    		    class DateItem{
+    		    Date mDate;
     		    
+    		    public DateItem(Date date) {
+    		    	mDate = date;
+    		    }
+    		    public Date getDate() {
+    		        return mDate;
+    		    }
+    		    public String toString() {
+
+    		        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy");
+
+    		        return sdf.format(mDate);
+    		    }
+    		    }
+    		    
+    		    Calendar calendar = Calendar.getInstance();
+				
+    		    for (int i = 0; i < 365; ++i) {
+    		    	EventStartDate.addItem(new DateItem(calendar.getTime()));
+    		    	EventEndDate.addItem(new DateItem(calendar.getTime()));
+    		        calendar.add(Calendar.DATE, 1);
+    		    }
+
     		    // Setting the place of each element on the JPanel
-    		    addingEvents.setBounds(10, 0,350,80);
-    		    eventName.setBounds(120, 80, 200, 45);
-    		    reason.setBounds(10, 240, 400, 120);
-    		    EventStartDate.setBounds(50, 140, 80, 30);
-    		    EventEndDate.setBounds(190, 140, 80, 30);
-    		    eventStart.setBounds(50, 190, 80, 30);
-    		    eventEnd.setBounds(190, 190, 80, 30);
-    		    eventColor.setBounds(330, 190, 80, 30);
-    		    startTimeLabel.setBounds(10,150, 50,30);
-    		    endTimeLabel.setBounds(150, 140, 50, 30);
-    		    eventColorLabel.setBounds(300,140,80,30);
-    		    submit.setBounds(335,420,80,30);
+    		    addingEvents.setBounds(750, 30,450,80);
+    		    
+    		    eventName.setBounds(750, 150, 500, 50);
+    		    reason.setBounds(500, 500, 800, 400);
+    		    
+    		    EventStartDate.setBounds(600, 300, 300, 50);
+    		    EventEndDate.setBounds(600, 350, 300, 50);
+    		    
+    		   
+    		    
+    		    startTimeLabel.setBounds(10,300, 300,50);
+    		    eventStart.setBounds(220, 300, 300, 50);
+    		    
+    		    endTimeLabel.setBounds(10, 350, 300, 50);
+    		    eventEnd.setBounds(220, 350, 300, 50);
+    		    
+    		    eventColorLabel.setBounds(1000,300,300,50);
+    		    eventColor.setBounds(1300, 300, 300, 50);
+    		    
+    		    submit.setBounds(1350,700,150,80);
     		    
     		    
     		    // Size of the JPane
-    		    addElement.setSize(465,550);
+    		    addElement.setExtendedState(JFrame.MAXIMIZED_BOTH);
     		    addElement.setLayout(null);
     		    addElement.setVisible(true);
     		    
@@ -1676,13 +2086,18 @@ public class classproject extends JFrame {
     		    addElement.add(addingEvents);
     		    addElement.add(eventName);
     		    addElement.add(reason);
+    		    
+    		    
+    		   
     		    addElement.add(EventStartDate);
     		    addElement.add(EventEndDate);
-    		    addElement.add(eventStart);
+    		   
+    		    
     		    addElement.add(eventEnd);
-    		    addElement.add(eventColor);
-    		    addElement.add(startTimeLabel);
     		    addElement.add(endTimeLabel);
+    		    addElement.add(startTimeLabel);
+    		    addElement.add(eventStart);
+    		    addElement.add(eventColor);
     		    addElement.add(eventColorLabel);
     		    addElement.add(submit);
     		
@@ -1690,18 +2105,18 @@ public class classproject extends JFrame {
     		    // then closes the JPane so user can either add another event or view event by clicking
     		    // on each day
     		    submit.addActionListener(new ActionListener() {
-    		        public void actionPerformed(ActionEvent e)
+    		        public void actionPerformed(ActionEvent submitting)
     		        {
     		        	String stringEvent = eventName.getText();
-    		        	String startTimeDate = (EventStartDate.getText() + " "+ eventStart.getSelectedItem().toString());
-    		        	String endTimeDate = (EventEndDate.getText() + " " + eventEnd.getSelectedItem().toString());
+    		        	String startTimeDate = (EventStartDate.getSelectedItem().toString() + " "+ eventStart.getSelectedItem().toString());
+    		        	String endTimeDate = (EventEndDate.getSelectedItem().toString() + " " + eventEnd.getSelectedItem().toString());
     		        	String stringNotes = reason.getText();
     		        	String selectedColor = eventColor.getSelectedItem().toString();
     		            addElement.dispose();
     		            
     		            
     		            // Creates new event and saves to the database
-    		            CreateEvent event = new CreateEvent("nathan.mnsu", stringEvent, stringNotes, startTimeDate, endTimeDate, selectedColor);
+    		            CreateEvent event = new CreateEvent(userset.getText(), stringEvent, stringNotes, startTimeDate, endTimeDate, selectedColor);
     		            
     		            // Error control
     		            try {
@@ -1711,98 +2126,424 @@ public class classproject extends JFrame {
     		        }}
     		    });
     		    
-    		   // I still need to implement the function so when the user selects a day they can view 
-    		    // their events for the given day.
-    		    
     		}
     	});
-    		
-    	
 		
 		
-		
-		
-		
-		for(int i=0;i<one.size();i++) {
-			//creating a new Jframe that will open up when the user clicks any of the day buttons, that includes the 4 new buttons
-		one.get(i).addActionListener(new ActionListener() {
+        try {
+        	ResultSet listofitems=pullevent.retriveEventForUser();
+    } catch (ClassNotFoundException | SQLException e2) {
+        e2.printStackTrace();
+    }
+  		
+        // Creates panes that we can add to
+        JPanel option = new JPanel();
+        classproject options = new classproject();
+        JPanel title = new JPanel();
+        
+        
+        for(int g=0;g<one.size();g++) {
+			//creating a new Jframe that will open up when the user clicks any of the day buttons
+        	int j = (g+1);
+        	LocalDate localDate = LocalDate.of(Calendar.getInstance().get(Calendar.YEAR),  Calendar.getInstance().get(Calendar.MONTH)+1, g+1); 
+        	
+            // Find the day from the local date
+            DayOfWeek dayOfWeek = DayOfWeek.from(localDate);
+            
+            // first converting the dayOfWeek to a String value then splitting the string
+            // between first letter and remaining, first letter is left capital then remaining is
+            // lowercase then combine the two strings back together for proper casing
+            String convertedToString = dayOfWeek.toString();
+            String firstLetter = convertedToString.substring(0,1);
+            String remainingLettters = convertedToString.substring(1, convertedToString.length());
+            remainingLettters = remainingLettters.toLowerCase();
+            String properDayofWeek = firstLetter + remainingLettters;
+
+            // action listener on the day clicked
+		one.get(g).addActionListener(new ActionListener() {
+			// instance variables
+			String l = localDate.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM));
+			String[] localDateArray = l.split(" ");
+         
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd");
+			String formattedDay = formatter.format(localDate);
 			
-			public void actionPerformed(ActionEvent e){ 
+			List<String> eventNameArray = new ArrayList<String>(); 
+			JTextField addingDailyEvents = new JTextField();
+			JLabel eventLabel;
+			
+			JTextArea eventReasoning = new JTextArea();
+			JButton chooseEvent;
+			
+			String eventName1;
+			String eventReason1;
+			String start_Time1;
+			String end_Time1;
+			
+			
+			public void actionPerformed(ActionEvent event) {
+				
+		    	//try block needed because of sql requitemnt for throwing errors
+		    	try {
+		    		
+		    	      //pulls all the events for the user from the class retriveEventForUser
 
-		  classproject options = new classproject();
-	        JPanel title = new JPanel();
-	        JPanel option = new JPanel();
-	        Color color = panel1.getBackground();
-	    	JTextField scheduling = new JTextField("Scheduling");
+		    	         ResultSet listofitems=pullevent.retriveEventForUser();
+		    	         JComboBox eventNameCombo = new JComboBox();
+		    	         
+		    	      		while(listofitems.next()) {
+		    	      			// pulling the events from sql database
+		    	      			RetriveEvent pullevent1 = new RetriveEvent("nathan.mnsu");
+		    	      			
+		    	      			eventName1 = listofitems.getString("EVENTNAME");
+		        				eventReason1 = listofitems.getString("REASON");
+		        				start_Time1 = listofitems.getString("START_TIME");
+		        				end_Time1 = listofitems.getString("END_TIME");
+		        				
+		        				// splitting the list so we can iterate thru
+		                        String[] start_Time_List1 = start_Time1.split(" ");
+		                        String monthly=start_Time_List1[0];
+		                        String daily = start_Time_List1[1];
+		                        String yearly = start_Time_List1[2];
 
-	    	Font schedule = new Font("Arial", Font.BOLD, 48);
-	    	scheduling.setFont(schedule);
-	    	scheduling.setForeground(Color.black);
-	    	scheduling.setBounds(500,50,350,80);
-	    	scheduling.setEditable(false);	scheduling.setBorder(BorderFactory.createLineBorder(color));
-			options.setSize(1000, 1000);
-			options.setLayout(null);
-			options.setVisible(true);
-			options.add(scheduling);
-			for(int i=0;i<two.size();i++) {
-				options.add(two.get(i));}
-			options.add(title, BorderLayout.CENTER);
-			options.add(option, BorderLayout.CENTER);
-			options.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		                        
+		                        String[] start_Time_List = start_Time1.split(" +");
+		                        String startMonth=start_Time_List[0];
+		                        int startDay =Integer.parseInt(start_Time_List[1]);
+		                        int startYear = Integer.parseInt(start_Time_List[2]);
+		                        String startTime = start_Time_List[3];
+
+		                        String[] end_Time_List = end_Time1.split(" +");
+		                        String endMonth=end_Time_List[0];
+		                        int endDay =Integer.parseInt(end_Time_List[1]);
+		                        int endyear = Integer.parseInt(end_Time_List[2]);
+		                        String endTime1 = start_Time_List[3];
+
+		                        // allows us to give the month proper numeric value to reference
+		        				int monthNum = -1;
+		        				if (startMonth.equals("Jan")) {
+		        					monthNum = 0;  		
+		        				}else if(startMonth.equals("Feb")) {
+		        					monthNum = 1;
+		        				}else if(startMonth.equals("Mar")) {
+		        					monthNum = 2;
+		        				}else if(startMonth.equals("Apr")) {
+		        					monthNum = 3;
+		        				}else if(startMonth.equals("May")) {
+		        					monthNum = 4;
+		        				}else if(startMonth.equals("Jun")) {
+		        					monthNum = 5;
+		        				}else if(startMonth.equals("Jul")) {
+		        					monthNum = 6;
+		        				}else if(startMonth.equals("Aug")) {
+		        					monthNum = 7;
+		        				}else if(startMonth.equals("Sep")) {
+		        					monthNum = 8;
+		        				}else if(startMonth.equals("Oct")) {
+		        					monthNum = 9;
+		        				}else if(startMonth.equals("Nov")) {
+		        					monthNum = 10;
+		        				}else if(startMonth.equals("Dec")) {
+		        					monthNum =	11;
+		        				}
+		        				int endMonthNum = -1;
+		        				if (endMonth.equals("Jan")) {
+		        					endMonthNum = 0;
+		        				}else if(endMonth.equals("Feb")) {
+		        					endMonthNum = 1;
+		        				}else if(endMonth.equals("Mar")) {
+		        					endMonthNum = 2;
+		        				}else if(endMonth.equals("Apr")) {
+		        					endMonthNum = 3;
+		        				}else if(endMonth.equals("May")) {
+		        					endMonthNum = 4;
+		        				}else if(endMonth.equals("Jun")) {
+		        					endMonthNum = 5;
+		        				}else if(endMonth.equals("Jul")) {
+		        					endMonthNum = 6;
+		        				}else if(endMonth.equals("Aug")) {
+		        					endMonthNum = 7;
+		        				}else if(endMonth.equals("Sep")) {
+		        					endMonthNum = 8;
+		        				}else if(endMonth.equals("Oct")) {
+		        					endMonthNum = 9;
+		        				}else if(endMonth.equals("Nov")) {
+		        					endMonthNum = 10;
+		        				}else if(endMonth.equals("Dec")) {
+		        					endMonthNum = 11;
+		        				}
+		        			
+		        				
+		        				// day in year of start date
+		        				Calendar startDayInYear = new  GregorianCalendar(2020,monthNum,startDay);
+		                        //System.out.println("Start day: "+startDayInYear.get(startDayInYear.DAY_OF_YEAR));
+
+		                        //day in year of end date
+		                        Calendar endDayInYear = new  GregorianCalendar(2020,endMonthNum,endDay);
+		                       // System.out.println("End day: "+endDayInYear.get(endDayInYear.DAY_OF_YEAR));
+
+
+
+		                        //year, month, day--change to month that button is in and day that button is on
+		                        Calendar dayInYearOfButton = new  GregorianCalendar(2020,10,j);
+		                        int x= dayInYearOfButton.get(dayInYearOfButton.DAY_OF_YEAR);
+		                        //System.out.println("Button pressed: "+x);
+		        				
+		        			
+		        				
+		        				// checks if event occurs between numeric days so if day occurs between ie. day 246 & 250 
+		                        // display these events in the combobox for user to select event
+		                        int z =2020;
+                    			
+		        				if(x>=startDayInYear.get(startDayInYear.DAY_OF_YEAR)&&x<=endDayInYear.get(endDayInYear.DAY_OF_YEAR)&&z==2020) {					
+		        					//System.out.printf("%-20s%-35s%-25s%-25s%s%n",listofitems.getString("EVENTNAME"),listofitems.getString("REASON"),listofitems.getString("START_TIME"),listofitems.getString("END_TIME"),listofitems.getString("COLOR"));
+		        					
+		        					
+		        					// adds eventName to the combobox for user to select from
+		        					//eventNameArray.add(listofitems.getString("EVENTNAME"));
+		        					eventNameCombo.addItem(listofitems.getString("EVENTNAME"));
+		        					
+		        					
+		        				}
+		                       
+		    	      		}
+		    	      	eventLabel = new JLabel("Choose Event:");
+		                //System.out.println("Events on this day!\n);
+		                chooseEvent = new JButton("CHOOSE");			
+		                eventLabel.setBounds(15, 150, 80, 30);
+                   		eventNameCombo.setBounds(100,150,300,40);
+                   		chooseEvent.setBounds(400,500,100,30);		
+                   		eventReasoning = new JTextArea("Description: " + eventReason1 + 
+                   					" \n\n\n\n\nStart Time: " + start_Time1 + "\n\nEnd Time: " + end_Time1);
+                   			
+                   			//System.out.println(eventReason1);
+                   		Font reasoning = new Font("Arial", Font.BOLD, 16);
+                   		eventReasoning.setFont(reasoning);
+                   		
+                   		options.add(eventNameCombo);
+                   		options.add(chooseEvent);
+                   		options.add(eventLabel);	
+                   		options.add(eventReasoning);
+                   		// action listener on the comboBox so we can display the event the user
+                   		// selected such as event notes, start and end times.
+                   		chooseEvent.addActionListener(new ActionListener() {
+                				public void actionPerformed(ActionEvent name)
+                		        {
+                					int inteventChosen = eventNameCombo.getSelectedIndex();
+                					String eventChosen=eventNameCombo.getItemAt(inteventChosen).toString();
+                					
+                					eventReasoning.setBounds(100, 200, 650, 275);
+                					eventReasoning.setForeground(Color.black);
+                					eventReasoning.setBorder(BorderFactory.createLineBorder(color));
+                					eventReasoning.setEditable(false);
+                					//eventReasoning=null;
+                		        }
+                				
+                				
+                			});
+		    	      		
+		
+		    	      //catches sql errors
+		    		} catch (ClassNotFoundException | SQLException e2) {
+		    				e2.printStackTrace();
+		    	}
+				
+		        // Displays the day clicked on by the user. in the format DAY, month year
+		        JTextField scheduling = new JTextField(properDayofWeek + ", " + months[Calendar.getInstance().get(Calendar.MONTH)] + " " + j + "\n\n");
+		        scheduling.setHorizontalAlignment(JTextField.CENTER);
+		        
+		        
+		        // Get scheduling varaible to show the day that the user clicks on then use that variable to
+		    	// search the data base for dates that match
+
+		    	Font schedule = new Font("Arial", Font.BOLD, 30);
+		    	scheduling.setFont(schedule);
+		    	scheduling.setForeground(Color.black);
+		    	scheduling.setBounds(350,50,400,80);
+		    	scheduling.setEditable(false);	scheduling.setBorder(BorderFactory.createLineBorder(color));
+		    	
+		    	
+		    	// settings for panel that opens when the user clicks on a day to view events
+				options.setSize(1000, 1000);
+				options.setLayout(null);
+				options.setVisible(true);
+				options.add(scheduling);
+				
+				options.add(title, BorderLayout.CENTER);
+				options.add(option, BorderLayout.CENTER);
+				options.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 			}
 		});
+        }
+  
+	
+			}
+					// if the password is invalid, the jtextfield for the username will be set to invalid
+			else {
+				userset.setText("invalid");
+				passwordset.setText("invalid");
+			}
+			
+			
+
+
+			}
+				//catching an exception
+		catch(Exception n){/*userset.setText("invalid");*/
+			System.out.println("error");}
+		
+		
+		
+	}
+});
+		
+		
+		// adding an action listener to the create account button
+		create.addActionListener(new ActionListener() {
+			
+			
+			public void actionPerformed(ActionEvent account){
+				//setting the new frame
+			 classproject frame = new classproject();
+			 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+			 
+			 //adding different texfields indicating what we want the user to enter
+		        JTextField username=new JTextField("Enter  new username:");
+		        JTextField password=new JTextField("Enter new password:");
+		        JTextField name=new JTextField("Enter your name: ");
+		        JTextField lastname=new JTextField("Enter your last name: ");
+		        JTextField email=new JTextField("Enter your email: ");
+
+		        JTextField title=new JTextField("Create your account");
+		        //giving the title a font
+		        title.setFont(new Font("Arial", Font.PLAIN, 120));
+		        //creating textfields to enter info onto
+		        JTextField passwordset=new JTextField("");
+		        JTextField userset=new JTextField("");
+		        JTextField name2=new JTextField("");
+		        JTextField lastname2=new JTextField("");
+		        JTextField email2=new JTextField("");
+		        
+		        username.setFont(new Font("Arial", Font.PLAIN, 50));
+		        password.setFont(new Font("Arial", Font.PLAIN, 50));
+		        name.setFont(new Font("Arial", Font.PLAIN, 50));
+		        lastname.setFont(new Font("Arial", Font.PLAIN, 50));
+		        email.setFont(new Font("Arial", Font.PLAIN, 50));
+		        
+		        userset.setFont(new Font("Arial", Font.PLAIN, 50));
+		        passwordset.setFont(new Font("Arial", Font.PLAIN, 50));
+		        name2.setFont(new Font("Arial", Font.PLAIN, 50));
+		        lastname2.setFont(new Font("Arial", Font.PLAIN, 50));
+		        email2.setFont(new Font("Arial", Font.PLAIN, 50));
+		        
+		        //coloring the borders of the textfields to make them visible
+		        passwordset.setBorder(new LineBorder(Color.black));
+		        userset.setBorder(new LineBorder(Color.black));
+		       username.setBorder(new LineBorder(Color.black));
+		       name2.setBorder(new LineBorder(Color.black));
+		       password.setBorder(new LineBorder(Color.black));
+		       name.setBorder(new LineBorder(Color.black));
+		       lastname.setBorder(new LineBorder(Color.black));
+		       lastname2.setBorder(new LineBorder(Color.black));
+		       email.setBorder(new LineBorder(Color.black));
+		       email2.setBorder(new LineBorder(Color.black));
+		       
+		       //setting the location of all the textfields
+		       email.setBounds(200, 700, 700, 60);
+		       email2.setBounds(1000, 700, 700, 60);
+		       
+		       password.setBounds(200, 600, 700, 60);
+		       passwordset.setBounds(1000, 600, 700, 60);
+		       
+		       userset.setBounds(1000, 500, 700, 60);
+		       username.setBounds(200, 500, 700, 60);
+		       
+		       name2.setBounds(1000, 300, 700, 60);
+		       name.setBounds(200, 300, 700, 60);
+		    	
+		    	lastname.setBounds(200, 400, 700, 60);
+		    	lastname2.setBounds(1000, 400, 700, 60);
+		    	
+		    	
+		    	title.setBounds(200, 100, 1300, 150);
+		    	
+		    	
+		    	Creating.setBounds(750,800,900,60);
+		    	
+		    	
+		    	//making the textfields that we do not want the user to edit impossible for them to do so
+		    	title.setEditable(false);
+		    	username.setEditable(false);
+		    	password.setEditable(false);
+		    	name.setEditable(false);
+		    	lastname.setEditable(false);
+		    	email.setEditable(false);
+		    	
+		    	//adding the different items we want on the frame
+		    	frame.add(password);
+		    	frame.add(username);
+		    	frame.add(title);
+		    	frame.add(passwordset);
+		    	frame.add(userset);
+		    	frame.add(name);
+		    	frame.add(name2);
+		    	frame.add(lastname);
+		    	frame.add(lastname2);
+		    	frame.add(email);
+		    	frame.add(email2);
+		    
+				
+				frame.setLayout(null);
+				frame.setVisible(true);
+				
+				
+				
+
+				//adding the button representing the create account
+				frame.add(Creating);
+				// disposing the JFrame when the user hits the close button
+				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				
+				Creating.addActionListener(new ActionListener() {
+					
+					public void actionPerformed(ActionEvent createuser){
+						try {
+							
+							ProcessBuilder processbuilder = new ProcessBuilder("python","c:\\\\Calendar\\\\Hash.py",""+passwordset.getText());
+							Process process = processbuilder.start();
+
+							BufferedReader buffer = new BufferedReader(new InputStreamReader(process.getInputStream()));
+							
+							String line = buffer.readLine();
+							String line2=buffer.readLine();
+									
+							System.out.println(line);
+							System.out.println(line2);
+						
+						
+							
+						CreateUser creating=new CreateUser(name2.getText(), lastname2.getText(), userset.getText(),email2.getText(),line2,line);
+						if(creating.checkDuplicate()==0) {
+							System.out.println("username is used");
+						}
+						else {
+						
+							frame.dispose();
+							
+						
+						}
+						}
+						catch(Exception Exception) {
+							System.out.println("error");
+						}
+			}
+					});
+			
+			
 		}
-		//AppointmentJFrame
-		//creating a new JFrame that will come up when the user clicks the appointment button
-			appointment.addActionListener(new ActionListener(){
-				 public void actionPerformed(ActionEvent e){  
-				    	classproject appointment = new classproject();
-				        JPanel title = new JPanel();
-				        JPanel option = new JPanel();
-				        Color color = panel1.getBackground();
-				    	JTextField appo = new JTextField("Add appointment");
-				    	Font app = new Font("Arial", Font.BOLD, 48);
-				    	appo.setFont(app);
-				    	appo.setForeground(Color.black);
-				    	appo.setBounds(100,30,400,80);
-				    	appo.setEditable(false);	
-				    	appointment.setSize(600, 500);
-				    	appointment.setLayout(null);
-				    	appointment.setVisible(true);
-				    	appointment.add(appo);
-				    	appointment.add(title, BorderLayout.CENTER);
-				    	appointment.add(option, BorderLayout.CENTER);
+		
+		
+	    });
+	}
 
-						frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 	 
-				    }
-			});
-			//EVENTJFRAME
-			//creating a new JFrame that will come up when the user clicks the event button
-    event.addActionListener(new ActionListener(){ 	
-    public void actionPerformed(ActionEvent e){  
-    	classproject newevent = new classproject();
-        JPanel title = new JPanel();
-        JPanel option = new JPanel();
-        Color color = panel1.getBackground();
-    	JTextField events= new JTextField("Add event");
-    	Font event = new Font("Arial", Font.BOLD, 48);
-    	events.setFont(event);
-    	events.setForeground(Color.black);
-    	events.setEditable(false);	
-		events.setBounds(100,30,400,80);
-		newevent.setSize(600, 500);
-		newevent.setLayout(null);
-		newevent.setVisible(true);
-		newevent.add(events);
-		newevent.add(title, BorderLayout.CENTER);
-		newevent.add(option, BorderLayout.CENTER);
-		newevent.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE); 
-
-    }
-
-    }); 
-
-	    }
-
-
-} 
+}
